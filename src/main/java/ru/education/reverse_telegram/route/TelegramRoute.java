@@ -1,18 +1,27 @@
 package ru.education.reverse_telegram.route;
 
+import org.apache.camel.builder.DefaultErrorHandlerBuilder;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.component.telegram.model.IncomingMessage;
 import org.springframework.stereotype.Component;
 
 @Component
 public class TelegramRoute extends RouteBuilder {
     @Override
-    public void configure() throws Exception {
-        from("telegram:bots?authorizationToken=1604975855:AAFWNq78dMMUOLRFhzG_aIMQiIV3rz4g6sU")
+    public void configure() {
+        from("telegram:bots?authorizationToken={{auth-key}}")
+                .errorHandler(new DefaultErrorHandlerBuilder())
                 .process(exchange -> {
-                    String incoming = exchange.getIn().getBody(String.class);
-                    StringBuilder sb = new StringBuilder(incoming);
-                    exchange.getIn().setBody(sb.reverse().toString()) ;
+                    IncomingMessage in = (IncomingMessage) exchange.getIn().getBody();
+                    try {
+                        String incoming = in.getText();
+                        StringBuilder sb = new StringBuilder(incoming);
+                        exchange.getIn().setBody(sb.reverse().toString()) ;
+                    }catch (Exception e){
+                        exchange.getIn().setBody("Wrong format incoming message");
+                    }
+
                 })
-                .to("telegram:bots?authorizationToken=1604975855:AAFWNq78dMMUOLRFhzG_aIMQiIV3rz4g6sU");
+                .to("telegram:bots?authorizationToken={{auth-key}}");
     }
 }
